@@ -44,9 +44,9 @@ if len(sys.argv) < 4:
     print('usage: python txt2xml.py -i input_dir -o output_dir -p images_dir -n names_file')
     sys.exit(1)
 #用法：
-#input_dir = '/txt'  txt所在路径
+#input_dir = '/txt'  标签txt所在路径
 #output_dir = '/xml'  要输出的xml文件路径
-#images_dir = '/images'   txt对应照片所在文件路径
+#images_dir = '/images'   txt对应图片所在文件路径
 #names_file = '/.names'    数据集类名所在文件路径
 try:
     options,args = getopt.getopt(sys.argv[1:],"i:o:p:n:",["input=", "output=", "images=", "names="])
