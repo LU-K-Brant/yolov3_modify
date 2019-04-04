@@ -566,7 +566,7 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
     list *options = read_data_cfg(datacfg);
     char *name_list = option_find_str(options, "names", "data/names.list");
     char **names = get_labels(name_list);
-
+ 
     image **alphabet = load_alphabet();
     network *net = load_network(cfgfile, weightfile, 0);
     set_batch_network(net, 1);
@@ -575,29 +575,78 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
     char buff[256];
     char *input = buff;
     float nms=.45;
+    int i=0;
     while(1){
         if(filename){
             strncpy(input, filename, 256);
-        } else {
+            image im = load_image_color(input,0,0);
+            image sized = letterbox_image(im, net->w, net->h);
+            layer l = net->layers[net->n-1];
+ 
+ 
+            float *X = sized.data;
+            time=what_time_is_it_now();
+            network_predict(net, X);
+            printf("%s: Predicted in %f seconds.\n", input, what_time_is_it_now()-time);
+            int nboxes = 0;
+            detection *dets = get_network_boxes(net, im.w, im.h, thresh, hier_thresh, 0, 1, &nboxes);
+            if (nms) do_nms_sort(dets, nboxes, l.classes, nms);
+                draw_detections(im, dets, nboxes, thresh, names, alphabet, l.classes);
+                free_detections(dets, nboxes);
+            if(outfile)
+             {
+                save_image(im, outfile);
+             }
+            else{
+                save_image(im, "predictions");
+#ifdef OPENCV
+                cvNamedWindow("predictions", CV_WINDOW_NORMAL); 
+                if(fullscreen){
+                cvSetWindowProperty("predictions", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+                }
+                show_image(im, "predictions",0);
+                cvWaitKey(0);
+                cvDestroyAllWindows();
+#endif
+            }
+            free_image(im);
+            free_image(sized);
+            if (filename) break;
+         } 
+        else {
             printf("Enter Image Path: ");
             fflush(stdout);
             input = fgets(input, 256, stdin);
             if(!input) return;
             strtok(input, "\n");
-        }
-        image im = load_image_color(input,0,0);
-        image sized = letterbox_image(im, net->w, net->h);
+   
+            list *plist = get_paths(input);
+            char **paths = (char **)list_to_array(plist);
+             printf("Start Testing!\n");
+            int m = plist->size;
+            if(access("/home/lzm/data/test_folder/darknet/car_person/out",0)==-1)//"/homelzm/......"修改成自己要保存图片的的路径
+            {
+              if (mkdir("/home/lzm/data/test_folder/darknet/car_person/out",0777))//"/homelzm/......"修改成自己要保存图片的的路径
+               {
+                 printf("creat folder failed!!!");
+               }
+            }
+            for(i = 0; i < m; ++i){
+             char *path = paths[i];
+             image im = load_image_color(path,0,0);
+             image sized = letterbox_image(im, net->w, net->h);
         //image sized = resize_image(im, net->w, net->h);
         //image sized2 = resize_max(im, net->w);
         //image sized = crop_image(sized2, -((net->w - sized2.w)/2), -((net->h - sized2.h)/2), net->w, net->h);
         //resize_network(net, sized.w, sized.h);
         layer l = net->layers[net->n-1];
-
-
+ 
+ 
         float *X = sized.data;
         time=what_time_is_it_now();
         network_predict(net, X);
-        printf("%s: Predicted in %f seconds.\n", input, what_time_is_it_now()-time);
+        printf("Try Very Hard:");
+        printf("%s: Predicted in %f seconds.\n", path, what_time_is_it_now()-time);
         int nboxes = 0;
         detection *dets = get_network_boxes(net, im.w, im.h, thresh, hier_thresh, 0, 1, &nboxes);
         //printf("%d\n", nboxes);
@@ -609,19 +658,30 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
             save_image(im, outfile);
         }
         else{
-            save_image(im, "predictions");
+             
+             char b[2048];
+            sprintf(b,"/home/lzm/data/test_folder/darknet/car_person/out/%s",GetFilename(path));//"/homelzm/......"修改成自己要保存图片的的路径
+            
+            save_image(im, b);
+            printf("OJBK!\n",GetFilename(path));
 #ifdef OPENCV
-            make_window("predictions", 512, 512, 0);
-            show_image(im, "predictions", 0);
+            cvNamedWindow("predictions", CV_WINDOW_NORMAL); 
+            if(fullscreen){
+                cvSetWindowProperty("predictions", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+            }
+            show_image(im, "predictions",0);
+            cvWaitKey(0);
+            cvDestroyAllWindows();
 #endif
         }
-
+ 
         free_image(im);
         free_image(sized);
         if (filename) break;
+        }
+      }
     }
 }
-
 /*
 void censor_detector(char *datacfg, char *cfgfile, char *weightfile, int cam_index, const char *filename, int class, float thresh, int skip)
 {
