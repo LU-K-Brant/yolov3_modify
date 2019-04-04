@@ -265,15 +265,22 @@ void draw_detections(image im, detection *dets, int num, float thresh, char **na
     int i,j;
     for(i = 0; i < num; ++i){
         char labelstr[4096] = {0};
+		char s1[]={"  "};//为了name与置信度之间加空格
         int class = -1;
+	    char possible[5];//存放检测的置信值
         for(j = 0; j < classes; ++j){
+	    sprintf(possible,"%.2f",dets[i].prob[j]);//置信值截取小数点后两位赋给possible
             if (dets[i].prob[j] > thresh){
                 if (class < 0) {
                     strcat(labelstr, names[j]);
+					strcat(labelstr,s1); //加空格
+		            strcat(labelstr, possible);//标签中加入置信值
                     class = j;
                 } else {
                     strcat(labelstr, ", ");
                     strcat(labelstr, names[j]);
+					strcat(labelstr,s1);//加空格
+		            strcat(labelstr, possible);//标签中加入置信值
                 }
                 printf("%s: %.0f%%\n", names[j], dets[i].prob[j]*100);
             }
