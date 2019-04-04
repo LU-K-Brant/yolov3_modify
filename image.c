@@ -9,7 +9,7 @@
 #include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
-
+#define CHINESE
 int windows = 0;
 
 float colors[6][3] = { {1,0,1}, {0,0,1},{0,1,1},{0,1,0},{1,1,0},{1,0,0} };
@@ -145,6 +145,22 @@ image get_label(image **characters, char *string, int size)
     free_image(label);
     return b;
 }
+#ifdef CHINESE
+image get_label_chinese(image **characters, int class, int size)
+{
+    if(size > 7) size = 7;
+    image label = make_empty_image(0,0,0);
+
+     image l = characters[size][class];
+    image n = tile_images(label, l, -size - 1 + (size+1)/2);
+    free_image(label);
+    label = n;
+
+     image b = border_image(label, label.h*.25);
+    free_image(label);
+    return b;
+}
+#endif
 
 void draw_label(image a, int r, int c, image label, const float *rgb)
 {
@@ -227,11 +243,19 @@ image **load_alphabet()
     image **alphabets = calloc(nsize, sizeof(image));
     for(j = 0; j < nsize; ++j){
         alphabets[j] = calloc(128, sizeof(image));
+#ifdef CHINESE
+        for(i = 0; i < 4; ++i){
+            char buff[256];
+            sprintf(buff, "data/labels/cn_%d_%d.png", i, j);
+            alphabets[j][i] = load_image_color(buff, 0, 0);
+        }//其中4是自己的classes
+#else
         for(i = 32; i < 127; ++i){
             char buff[256];
             sprintf(buff, "data/labels/%d_%d.png", i, j);
             alphabets[j][i] = load_image_color(buff, 0, 0);
         }
+#endif
     }
     return alphabets;
 }
@@ -239,7 +263,6 @@ image **load_alphabet()
 void draw_detections(image im, detection *dets, int num, float thresh, char **names, image **alphabet, int classes)
 {
     int i,j;
-
     for(i = 0; i < num; ++i){
         char labelstr[4096] = {0};
         int class = -1;
@@ -292,7 +315,11 @@ void draw_detections(image im, detection *dets, int num, float thresh, char **na
 
             draw_box_width(im, left, top, right, bot, width, red, green, blue);
             if (alphabet) {
+                #ifdef CHINESE
+                image label = get_label_chinese(alphabet, class, (im.h*.03)/10);
+                #else
                 image label = get_label(alphabet, labelstr, (im.h*.03));
+                #endif
                 draw_label(im, top + width, left, label, rgb);
                 free_image(label);
             }
