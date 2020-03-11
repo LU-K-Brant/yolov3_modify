@@ -122,8 +122,8 @@ class Yolov3LogVisualization:
 
 if __name__ == '__main__':
 
-    log_path = 'train.log'
-    result_dir = 'results'
+    log_path = 'train.log'  #自己的训练日志
+    result_dir = 'results'  #生成的loss，iou图和日志保存的路径
     if not os.path.exists(result_dir):
         os.mkdir(result_dir)
     LogVisual = Yolov3LogVisualization(log_path,result_dir)
