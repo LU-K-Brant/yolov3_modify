@@ -46,7 +46,7 @@ class Yolov3LogVisualization:
     #抽取loss日志
     def parse_loss_log(self,log_path, line_num=2000):
 
-        #去掉前一千个loss较大的数据，后面每十个去一个
+        #去掉前一千个loss较大的数据，后面每十个取一个
         result = pd.read_csv(log_path, skiprows=[x for x in range(line_num) if ((x % 10 != 9) | (x < 1000))],error_bad_lines=False, names=['loss', 'avg', 'rate', 'seconds', 'images'])
         result['loss'] = result['loss'].str.split(' ').str.get(1)
         result['avg'] = result['avg'].str.split(' ').str.get(1)
